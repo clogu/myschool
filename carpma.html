@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Çarpma Öğreniyorum</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 10px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      font-size: 28px;
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    #timer-bar-container {
+      width: 100%;
+      height: 20px;
+      background-color: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+    #timer-bar {
+      height: 100%;
+      width: 100%;
+      background-color: #27ae60;
+      transition: width 1s linear;
+    }
+    #question {
+      font-size: 32px;
+      font-weight: bold;
+      margin: 15px 0;
+    }
+    #input {
+      font-size: 28px;
+      margin: 10px auto;
+      padding: 10px;
+      width: 120px;
+      text-align: center;
+      border: 2px solid #3498db;
+      border-radius: 8px;
+      background-color: #fff;
+    }
+    #keyboard {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 10px auto;
+      max-width: 300px;
+    }
+    .button {
+      width: 70px;
+      height: 70px;
+      margin: 5px;
+      font-size: 26px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .button:active {
+      background-color: #2980b9;
+    }
+    #submit {
+      margin: 15px;
+      font-size: 22px;
+      background-color: #2ecc71;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #score {
+      margin-top: 20px;
+      font-size: 20px;
+      color: #2c3e50;
+    }
+    #lesson-button {
+      margin-top: 25px;
+      font-size: 20px;
+      padding: 12px 30px;
+      background-color: #9b59b6;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Çarpma Öğreniyorum</h1>
+
+  <div id="timer-bar-container">
+    <div id="timer-bar"></div>
+  </div>
+
+  <div id="question">Soru yükleniyor...</div>
+
+  <input type="text" id="input" readonly placeholder="?" />
+
+  <div id="keyboard"></div>
+
+  <button id="submit" onclick="checkAnswer()">Cevapla</button>
+
+  <div id="score">Doğru: <span id="correct">0</span> | Yanlış: <span id="incorrect">0</span></div>
+
+  <button id="lesson-button" onclick="window.location.href='carpim-tablosu.html'">📘 Ders Tekrarı</button>
+
+  <script>
+    let correct = 0, incorrect = 0, currentAnswer = 0, timeLeft = 15, timerInterval;
+
+    function startGame() {
+      const a = Math.floor(Math.random() * 5) + 1;
+      const b = Math.floor(Math.random() * 10) + 1;
+      currentAnswer = a * b;
+      const soru = Math.random() > 0.5 ? `${a} × ${b}` : `${b} × ${a}`;
+      document.getElementById("question").textContent = soru + " = ?";
+      document.getElementById("input").value = '';
+      resetTimer();
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timeLeft = 15;
+      updateTimerBar();
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerBar();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          alert("Süre doldu! Doğru cevap: " + currentAnswer);
+          incorrect++;
+          updateScore();
+          startGame();
+        }
+      }, 1000);
+    }
+
+    function updateTimerBar() {
+      const bar = document.getElementById("timer-bar");
+      bar.style.width = (timeLeft / 15 * 100) + '%';
+      bar.style.backgroundColor = timeLeft > 10 ? '#27ae60' : timeLeft > 5 ? '#f39c12' : '#e74c3c';
+    }
+
+    function updateScore() {
+      document.getElementById("correct").textContent = correct;
+      document.getElementById("incorrect").textContent = incorrect;
+    }
+
+    function createKeyboard() {
+      const keys = ['1','2','3','4','5','6','7','8','9','0','←','C'];
+      const keyboard = document.getElementById("keyboard");
+      keyboard.innerHTML = '';
+      keys.forEach(key => {
+        const btn = document.createElement("button");
+        btn.textContent = key;
+        btn.className = "button";
+        btn.onclick = () => handleInput(key);
+        keyboard.appendChild(btn);
+      });
+    }
+
+    function handleInput(key) {
+      const input = document.getElementById("input");
+      if (key === 'C') {
+        input.value = '';
+      } else if (key === '←') {
+        input.value = input.value.slice(0, -1);
+      } else {
+        input.value += key;
+      }
+    }
+
+    function checkAnswer() {
+      clearInterval(timerInterval);
+      const input = document.getElementById("input").value;
+      if (parseInt(input) === currentAnswer) {
+        alert("Doğru!");
+        correct++;
+      } else {
+        alert(`Yanlış. Doğru cevap: ${currentAnswer}`);
+        incorrect++;
+      }
+      updateScore();
+      startGame();
+    }
+
+    createKeyboard();
+    startGame();
+  </script>
+
+</body>
+</html>

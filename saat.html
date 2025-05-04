@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Saat Öğreniyorum</title>
+  <style>
+    body {
+      font-family: 'Arial Rounded MT Bold', sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #fefefe;
+    }
+    h1 {
+      color: #30336b;
+    }
+    h2 {
+      color: #27ae60;
+      margin-bottom: 10px;
+    }
+    canvas {
+      background: white;
+      border: 2px solid #333;
+      border-radius: 50%;
+      width: 90vw;
+      max-width: 300px;
+      height: auto;
+    }
+    input, button {
+      font-size: 20px;
+      padding: 10px;
+      margin: 10px 5px;
+      border-radius: 8px;
+    }
+    #timeDescription {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #222f3e;
+    }
+    #meridiemInfo {
+      font-size: 20px;
+      margin: 15px 0;
+      font-weight: bold;
+      color: #e17055;
+    }
+    #result {
+      font-size: 22px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>⏰ Saat Kaç?</h1>
+  <h2 id="score">Skor: 0</h2>
+
+  <canvas id="clock" width="300" height="300"></canvas><br/>
+
+  <div id="meridiemInfo">🕐 Öğleden Önce</div>
+
+  <input type="tel" id="answer" placeholder="Örn: 0815" maxlength="5" inputmode="numeric" />
+  <div id="timeDescription"></div>
+
+  <button id="actionButton" onclick="handleAction()">Cevabı Kontrol Et</button>
+
+  <div id="result"></div>
+
+  <script>
+    const canvas = document.getElementById("clock");
+    const ctx = canvas.getContext("2d");
+    let hour, minute, isPM = false;
+    let score = 0;
+    let mode = "check"; // check -> new -> check...
+
+    const inputField = document.getElementById("answer");
+    const resultDiv = document.getElementById("result");
+    const descDiv = document.getElementById("timeDescription");
+    const meridiemInfo = document.getElementById("meridiemInfo");
+    const scoreEl = document.getElementById("score");
+    const actionButton = document.getElementById("actionButton");
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "tr-TR";
+      speechSynthesis.speak(utterance);
+    }
+
+    inputField.addEventListener("input", () => {
+      let value = inputField.value.replace(/[^0-9]/g, "").slice(0, 4);
+      if (value.length >= 3) {
+        value = value.slice(0, 2) + ":" + value.slice(2);
+      }
+      inputField.value = value;
+
+      const parts = value.split(":");
+      const minuteVal = parseInt(parts[1]);
+      const hourVal = parseInt(parts[0]);
+      let desc = "";
+
+      if (!isNaN(hourVal) && !isNaN(minuteVal)) {
+        const h = hourVal % 12 === 0 ? 12 : hourVal % 12;
+        const nextHour = (h % 12) + 1;
+
+        switch (minuteVal) {
+          case 0:
+            desc = `Saat tam ${h}`;
+            break;
+          case 15:
+            desc = `${h}’i çeyrek geçiyor`;
+            break;
+          case 30:
+            desc = `${h} buçuk`;
+            break;
+          case 45:
+            desc = `${nextHour}’a çeyrek var`;
+            break;
+          default:
+            desc = "";
+        }
+
+        descDiv.textContent = desc;
+        if (desc) speak(desc);
+      }
+    });
+
+    function drawClock(hour, minute,borderColor = "#333") {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = 120;
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+	  ctx.strokeStyle = borderColor; // dinamik çerçeve rengi
+  ctx.lineWidth = 4;
+      ctx.stroke();
+
+      for (let i = 1; i <= 12; i++) {
+        const angle = (i * 30 - 90) * Math.PI / 180;
+        const x = centerX + Math.cos(angle) * (radius - 25);
+        const y = centerY + Math.sin(angle) * (radius - 25);
+        ctx.font = "16px Arial";
+        ctx.fillText(i, x - 5, y + 5);
+      }
+
+      const hourAngle = ((hour % 12) + minute / 60) * 30 - 90;
+      drawHand(hourAngle, radius * 0.5, "red", 5);
+
+      const minuteAngle = (minute * 6) - 90;
+      drawHand(minuteAngle, radius * 0.8, "blue", 3);
+    }
+
+    function drawHand(angleDeg, length, color, width) {
+      const angle = angleDeg * Math.PI / 180;
+      const x = canvas.width / 2 + Math.cos(angle) * length;
+      const y = canvas.height / 2 + Math.sin(angle) * length;
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, canvas.height / 2);
+      ctx.lineTo(x, y);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    }
+
+    function generateRandomTime() {
+      hour = Math.floor(Math.random() * 12) + 1;
+      const minuteOptions = Array.from({ length: 12 }, (_, i) => i * 5);
+      minute = minuteOptions[Math.floor(Math.random() * minuteOptions.length)];
+
+      isPM = Math.random() < 0.5;
+      meridiemInfo.textContent = isPM ? "🕐 Öğleden Sonra" : "🕐 Öğleden Önce";
+
+      drawClock(hour, minute);
+      resultDiv.textContent = "";
+      descDiv.textContent = "";
+      inputField.value = "";
+    }
+
+    function checkAnswer() {
+      const raw = inputField.value.trim();
+      let formatted = raw;
+      if (raw.length === 5 && raw.includes(":")) {
+        formatted = raw;
+      }
+
+      let userHour = parseInt(formatted.split(":")[0]);
+      const userMin = parseInt(formatted.split(":")[1]);
+
+      if (isPM && userHour < 12) userHour += 12;
+      if (!isPM && userHour === 12) userHour = 0;
+
+      const correctHour = isPM ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
+      const correctMin = minute;
+
+      const userCorrect = userHour === correctHour;
+      const minuteCorrect = userMin === correctMin;
+
+      if (userCorrect && minuteCorrect) {
+        resultDiv.textContent = "✅ Tebrikler, doğru bildin!";
+        resultDiv.style.color = "green";
+        speak("Tebrikler, doğru bildin");
+        score += 1;
+        scoreEl.textContent = "Skor: " + score;
+		drawClock(hour, minute, "green"); // yeşil çember
+      } else {
+        const correctAnswer = `${correctHour.toString().padStart(2, '0')}:${correctMin.toString().padStart(2, '0')}`;
+        resultDiv.textContent = `❌ Yanlış. Doğru cevap: ${correctAnswer}`;
+        resultDiv.style.color = "red";
+        speak(`Yanlış. Doğru cevap: ${correctHour} ${correctMin}`);
+		drawClock(hour, minute, "red"); // kırmızı çember
+      }
+
+
+    }
+
+    function handleAction() {
+      if (mode === "check") {
+        checkAnswer();
+        actionButton.textContent = "Yeni Saat";
+        mode = "new";
+      } else {
+        generateRandomTime();
+        actionButton.textContent = "Cevabı Kontrol Et";
+        mode = "check";
+      }
+    }
+
+    generateRandomTime();
+  </script>
+</body>
+</html>

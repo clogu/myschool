@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dört İşlem Oyunu</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    #question {
+      font-size: 28px;
+      margin: 20px 0;
+    }
+    input, button {
+      font-size: 20px;
+      padding: 10px;
+      margin: 10px;
+    }
+    #score {
+      font-size: 22px;
+      margin-top: 10px;
+      color: #27ae60;
+    }
+    #timer {
+      font-size: 22px;
+      color: #c0392b;
+    }
+    #result {
+      font-size: 20px;
+      margin-top: 10px;
+    }
+    #progressBar {
+      width: 100%;
+      background-color: #ddd;
+      height: 20px;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+    #progress {
+      height: 100%;
+      width: 100%;
+      background-color: #3498db;
+      border-radius: 10px;
+      transition: width 1s linear;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧮 Hızlı Dört İşlem Oyunu</h1>
+  <div id="question">Soru yükleniyor...</div>
+  <input type="number" id="answer" placeholder="Cevabını yaz" />
+  <br/>
+  <button onclick="checkAnswer()">Cevabı Kontrol Et</button>
+  <div id="result"></div>
+  <div id="score">Skor: 0</div>
+  <div id="timer">Süre: 10</div>
+  <div id="progressBar"><div id="progress"></div></div>
+
+  <script>
+    let num1, num2, operator, correctAnswer;
+    let score = 0;
+    let timeLeft = 10;
+    let countdownInterval;
+    let answered = false;
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "tr-TR";
+      speechSynthesis.speak(utterance);
+    }
+
+    function generateQuestion() {
+      answered = false;
+      clearInterval(countdownInterval);
+      timeLeft = 10;
+      document.getElementById('timer').textContent = "Süre: " + timeLeft;
+      document.getElementById('progress').style.width = "100%";
+
+      countdownInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = "Süre: " + timeLeft;
+        document.getElementById('progress').style.width = (timeLeft * 10) + "%";
+
+        if (timeLeft <= 0) {
+          clearInterval(countdownInterval);
+          if (!answered) {
+            document.getElementById('result').textContent = `⏰ Süre doldu! Doğru cevap: ${correctAnswer}`;
+            document.getElementById('score').textContent = `Skor: ${score}`;
+            setTimeout(generateQuestion, 1500);
+          }
+        }
+      }, 1000);
+
+      const ops = ['+', '-', '*'];
+      operator = ops[Math.floor(Math.random() * ops.length)];
+
+      if (operator === '*') {
+        const options1 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        const options2 = [1, 2, 3, 4, 5];
+        num1 = options1[Math.floor(Math.random() * options1.length)];
+        num2 = options2[Math.floor(Math.random() * options2.length)];
+      } else {
+        num1 = Math.floor(Math.random() * 20) + 1;
+        num2 = Math.floor(Math.random() * 20) + 1;
+        if (operator === '-' && num2 > num1) [num1, num2] = [num2, num1];
+      }
+
+      correctAnswer = eval(num1 + operator + num2);
+      const questionText = `${num1} ${operator} ${num2} = ?`;
+      document.getElementById('question').textContent = questionText;
+      document.getElementById('answer').value = '';
+      document.getElementById('result').textContent = '';
+
+      speak(`${num1} ${operator === '+' ? 'artı' : operator === '-' ? 'eksi' : 'çarpı'} ${num2} kaç eder`);
+    }
+
+    function checkAnswer() {
+      if (answered || timeLeft <= 0) return;
+      answered = true;
+      clearInterval(countdownInterval);
+
+      const userAnswer = parseInt(document.getElementById('answer').value);
+      if (userAnswer === correctAnswer) {
+        document.getElementById('result').textContent = '✅ Doğru!';
+        score++;
+      } else {
+        document.getElementById('result').textContent = `❌ Yanlış! Doğru cevap: ${correctAnswer}`;
+      }
+      document.getElementById('score').textContent = `Skor: ${score}`;
+      setTimeout(generateQuestion, 1500);
+    }
+
+    generateQuestion();
+  </script>
+</body>
+</html>
